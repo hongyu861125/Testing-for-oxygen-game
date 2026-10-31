@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國小自然：製造與檢驗氧氣互動模擬實驗 (多種催化劑版)</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f0f9ff;
+            user-select: none;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+        /* Custom scrollbars for clean look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col items-center justify-between p-2 sm:p-4">
+
+    <header class="w-full max-w-5xl bg-white shadow-md rounded-2xl p-3 sm:p-4 mb-3 flex flex-col sm:flex-row items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-cyan-500 text-white p-2 sm:p-2.5 rounded-xl shadow-inner font-bold text-xl sm:text-2xl">🧪</div>
+            <div>
+                <h1 class="text-base sm:text-xl font-black text-cyan-900">國小自然：製造與檢驗氧氣實驗 (探究不同催化劑)</h1>
+                <p class="text-xs sm:text-sm text-slate-500">定性示意：過氧化氫分解與氧氣檢驗（速率未經實驗校準）</p>
+            </div>
+        </div>
+        <div class="mt-2 sm:mt-0 flex gap-2">
+            <button onclick="resetExperiment()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold rounded-lg transition shadow-sm">↺ 清空重新實驗</button>
+            <button onclick="toggleGuide()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition shadow-sm">💡 原理與步驟</button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 flex-grow">
+        
+        <!-- Left & Center: Canvas & Control Area -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+            
+            <!-- Experiment Interactive Canvas -->
+            <div class="glass-panel rounded-2xl p-3 shadow-lg relative flex flex-col items-center overflow-hidden">
+                <div class="absolute top-3 left-3 bg-cyan-50 text-cyan-800 text-xs font-bold px-2.5 py-1 rounded-md border border-cyan-200 shadow-sm z-10">
+                    🔬 實驗模擬畫布 (可滑鼠/手指拖曳線香由瓶口伸入檢驗)
+                </div>
+                
+                <!-- Main Canvas -->
+                <canvas id="experimentCanvas" width="600" height="380" class="w-full max-w-[600px] h-[300px] sm:h-[370px] bg-sky-50/70 rounded-xl border border-sky-100 shadow-inner cursor-grab active:cursor-grabbing mt-6 touch-none"></canvas>
+                
+                <!-- Dynamic Instruction / Scientific Explanation Banner -->
+                <div id="instructionBanner" class="mt-2 text-center text-xs sm:text-sm font-bold text-cyan-900 bg-cyan-100/90 border border-cyan-200 px-4 py-2 rounded-full w-full max-w-lg shadow-sm">
+                    步驟 1：請下方選擇並加入「催化劑」（例如：二氧化錳、金針菇或豬肝）！
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl p-3 sm:p-4 shadow-lg flex flex-col gap-3">
+                
+                <!-- 1. Catalyst Selection Grid -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1">
+                            <span>🧫</span> 選項 A：選擇催化劑種類
+                        </span>
+                        <span id="catalystTag" class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">目前：尚未選擇</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                        <button onclick="selectCatalyst('mno2')" id="cat_mno2" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🪨</span>
+                            <span class="text-[11px]">二氧化錳</span>
+                            <span class="text-[9px] text-slate-400 font-normal">無機催化劑</span>
+                        </button>
+                        <button onclick="selectCatalyst('enoki')" id="cat_enoki" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🍄</span>
+                            <span class="text-[11px]">金針菇</span>
+                            <span class="text-[9px] text-slate-400 font-normal">生物催化劑</span>
+                        </button>
+                        <button onclick="selectCatalyst('liver')" id="cat_liver" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🥩</span>
+                            <span class="text-[11px]">豬肝</span>
+                            <span class="text-[9px] text-slate-400 font-normal">豐富酵素</span>
+                        </button>
+                        <button onclick="selectCatalyst('carrot')" id="cat_carrot" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🥕</span>
+                            <span class="text-[11px]">胡蘿蔔</span>
+                            <span class="text-[9px] text-slate-400 font-normal">生物催化劑</span>
+                        </button>
+                        <button onclick="selectCatalyst('potato')" id="cat_potato" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🥔</span>
+                            <span class="text-[11px]">馬鈴薯</span>
+                            <span class="text-[9px] text-slate-400 font-normal">生物催化劑</span>
+                        </button>
+                        <button onclick="selectCatalyst('none')" id="cat_none" class="catalyst-btn p-1.5 sm:p-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex flex-col items-center gap-0.5 transition shadow-sm">
+                            <span class="text-base sm:text-lg">🚫</span>
+                            <span class="text-[11px]">無催化劑</span>
+                            <span class="text-[9px] text-slate-400 font-normal">僅雙氧水</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Action Flow Control Buttons -->
+                <div class="pt-2 border-t border-slate-200/80">
+                    <span class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1 mb-2">
+                        <span>⚙️</span> 選項 B：實驗操作流程
+                    </span>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button id="btnH2o2" onclick="addH2o2()" disabled class="p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition flex items-center justify-center gap-1.5 shadow-sm cursor-not-allowed">
+                            <span>💧</span> 1. 滴入雙氧水
+                        </button>
+                        <button id="btnCollect" onclick="startCollection()" disabled class="p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition flex items-center justify-center gap-1.5 shadow-sm cursor-not-allowed">
+                            <span>🧪</span> 2. 開始排水集氣
+                        </button>
+                        <button id="btnSplint" onclick="enableSplint()" disabled class="col-span-2 sm:col-span-1 p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition flex items-center justify-center gap-1.5 shadow-sm cursor-not-allowed">
+                            <span>🧪</span> 3. 將集氣瓶移出水槽
+                        </button>
+                    </div>
+                </div>
+
+                <!-- H2O2 Concentration Adjuster -->
+                <div class="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-600">
+                    <span class="font-medium">動畫時間倍率（非濃度控制）：</span>
+                    <div class="flex items-center gap-2 w-1/2">
+                        <input type="range" id="speedSlider" min="3" max="15" value="6" oninput="updateSpeed(this.value)" class="w-full accent-cyan-600 cursor-pointer">
+                        <span id="speedLabel" class="font-bold text-cyan-800 w-12 text-right">1.0×</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <span>📊</span> 實時數據監測面板
+                    </h3>
+                    <span id="badgeStatus" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">準備中</span>
+                </div>
+
+                <!-- Real-Time Stats Display -->
+                <div class="bg-white rounded-xl p-3 border border-slate-200 text-xs flex flex-col gap-2.5 shadow-inner mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">當前催化劑：</span>
+                        <span id="dataCatalyst" class="font-bold text-slate-800">無</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">催化劑類型：</span>
+                        <span id="dataCatType" class="font-bold text-slate-600">-</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">氣泡生成情形：</span>
+                        <span id="dataBubbleRate" class="font-bold text-cyan-700">靜止</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">集氣進度（示意）：</span>
+                        <div class="w-24 bg-slate-100 rounded-full h-3 border border-slate-200 relative overflow-hidden">
+                            <div id="o2Bar" class="bg-cyan-500 h-full w-0 transition-all duration-300"></div>
+                            <span id="o2Text" class="absolute inset-0 text-[9px] font-black text-center text-slate-700 leading-3">0%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">線香檢驗觀察：</span>
+                        <span id="dataSplintStatus" class="font-bold text-slate-700">尚未檢驗</span>
+                    </div>
+                </div>
+
+                <!-- Inquiry Interactive Quiz -->
+                <div class="bg-cyan-50/80 rounded-xl p-3 border border-cyan-200 text-xs flex flex-col gap-2.5">
+                    <p class="font-bold text-cyan-950 leading-snug">
+                        ❓ 探究思考：為什麼金針菇、豬肝或胡蘿蔔也能加速雙氧水產生氧氣？
+                    </p>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-cyan-200 cursor-pointer hover:bg-cyan-100/50 transition">
+                            <input type="radio" name="ans" value="A" class="accent-cyan-600">
+                            <span>食物本身的色素發揮作用</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-cyan-200 cursor-pointer hover:bg-cyan-100/50 transition">
+                            <input type="radio" name="ans" value="B" class="accent-cyan-600">
+                            <span>部分動植物組織含有過氧化氫酶 (Catalase)</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-cyan-200 cursor-pointer hover:bg-cyan-100/50 transition">
+                            <input type="radio" name="ans" value="C" class="accent-cyan-600">
+                            <span>食物中的水分加熱膨脹</span>
+                        </label>
+                    </div>
+                    
+                    <button onclick="verifyAnswer()" class="mt-1 w-full py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg transition shadow-sm">
+                        提交回答並驗證
+                    </button>
+                    <div id="feedbackMsg" class="text-center font-bold text-[11px] mt-0.5 min-h-[1.2rem] leading-tight"></div>
+                </div>
+            </div>
+
+            <!-- Learning Data Table Modal Trigger / Record -->
+            <button onclick="recordAndShowData()" class="mt-4 w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                <span>📝</span> 記錄數據並查看催化劑比較表
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Guide Modal -->
+    <div id="guideModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl flex flex-col gap-4">
+            <h3 class="text-lg font-black text-cyan-900 flex items-center gap-2">
+                <span>📖</span> 國小自然：過氧化氫酵素與無機催化劑原理
+            </h3>
+            <div class="text-xs sm:text-sm text-slate-600 space-y-2.5 leading-relaxed overflow-y-auto max-h-[60vh] pr-2">
+                <p><b>1. 什麼是催化劑？</b><br>能加速化學反應（如將雙氧水分解為水與氧氣），但本身在反應前後不會被消耗的物質。</p>
+                <p><b>2. 不同材料的作用：</b><br>二氧化錳可催化過氧化氫分解；動植物組織也可能含有過氧化氫酶（catalase），能加速過氧化氫分解。不同材料的實際反應速率會受到材料質量、切碎程度、表面積、保存狀態、溫度及過氧化氫濃度等因素影響，因此不能只依材料名稱斷言固定排名。本模擬器中的動畫速率僅為示意，並非實驗測量值。</p>
+                <p><b>3. 氧氣檢驗：</b><br>將帶有火星的木條伸入收集到的氣體中，若木條復燃或燃燒更旺盛，可作為有氧氣存在的證據。排水集氣的原理是氧氣進入倒置、原先裝滿水的集氣瓶並排開水；不是因為氧氣比空氣重。實際結果會受到收集量、氣體組成及木條狀態影響。</p>
+            </div>
+            <button onclick="toggleGuide()" class="py-2.5 bg-cyan-600 text-white font-bold rounded-xl text-sm transition shadow">我知道了，開始探究！</button>
+        </div>
+    </div>
+
+    <!-- Comparative Table Modal -->
+    <div id="dataModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-xl w-full shadow-2xl flex flex-col gap-4">
+            <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center justify-between">
+                <span>📋 催化劑對氧氣生成影響紀錄表</span>
+                <button onclick="toggleDataModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </h3>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                            <th class="p-2">催化劑名稱</th>
+                            <th class="p-2">類型</th>
+                            <th class="p-2">模擬反應情形（非實測）</th>
+                            <th class="p-2">線香檢驗（模擬）</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-slate-100 text-slate-600">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-emerald-50 text-emerald-900 p-3 rounded-xl border border-emerald-200 text-xs">
+                💡 <b>科學提醒：</b>二氧化錳可催化過氧化氫分解；部分生物組織含有過氧化氫酶。此表只記錄本模擬器的定性示意，不可視為真實材料的反應速率排名或實驗數據。
+            </div>
+
+            <button onclick="toggleDataModal()" class="py-2 bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow">關閉視窗</button>
+        </div>
+    </div>
+
+    <script>
+        // Canvas & Context setup
+        const canvas = document.getElementById('experimentCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Catalyst Property Specifications
+        const CATALYSTS = {
+            mno2: {
+                name: "二氧化錳",
+                type: "無機催化劑",
+                color: "#1e293b", // Dark black
+                bubbleRate: 3.2,
+                maxO2Rate: 1.8,
+                desc: "可催化過氧化氫分解；動畫速率僅為示意。",
+                drawShape: "powder"
+            },
+            enoki: {
+                name: "金針菇",
+                type: "生物過氧化氫酶",
+                color: "#fef3c7", // Creamy white
+                bubbleRate: 1.8,
+                maxO2Rate: 1.0,
+                desc: "組織可能含有過氧化氫酶；實際活性需測量。",
+                drawShape: "enoki"
+            },
+            liver: {
+                name: "豬肝",
+                type: "生物過氧化氫酶 (高劑量)",
+                color: "#7f1d1d", // Dark red
+                bubbleRate: 2.8,
+                maxO2Rate: 1.5,
+                desc: "肝臟組織通常有過氧化氫酶活性；實際速率受條件影響。",
+                drawShape: "chunks"
+            },
+            carrot: {
+                name: "胡蘿蔔",
+                type: "生物過氧化氫酶",
+                color: "#f97316", // Orange
+                bubbleRate: 1.2,
+                maxO2Rate: 0.7,
+                desc: "植物組織可能含有過氧化氫酶；動畫速率僅為示意。",
+                drawShape: "cubes"
+            },
+            potato: {
+                name: "馬鈴薯",
+                type: "生物過氧化氫酶",
+                color: "#fde047", // Yellowish brown
+                bubbleRate: 1.4,
+                maxO2Rate: 0.8,
+                desc: "馬鈴薯組織可能含有過氧化氫酶；實際活性需測量。",
+                drawShape: "cubes"
+            },
+            none: {
+                name: "無催化劑",
+                type: "無",
+                color: "transparent",
+                bubbleRate: 0.05,
+                maxO2Rate: 0.03,
+                desc: "沒有額外催化材料時，過氧化氫仍可能緩慢分解。",
+                drawShape: "none"
+            }
+        };
+
+        // Application State State Machine
+        let state = {
+            selectedCatKey: null,
+            hasCat: false,
+            hasH2o2: false,
+            collecting: false,
+            o2Level: 0, // 0 to 100%
+            splintActive: false,
+            jarLiftOffset: 0,
+            jarLiftRequested: false,
+            jarRemoved: false,
+            jarLidOpen: false,
+            splintY: 105, // 木條尖端由已轉正集氣瓶的瓶口向下伸入
+            splintX: 170, // Horizontal X matching inverted jar
+            isDraggingSplint: false,
+            speedMultiplier: 1.0,
+            recordedLogs: []
+        };
+
+        let bubbles = [];
+
+        // Touch and Mouse Dragging Logic for the Incense Splint (線香向下拖曳)
+        let isPointerDown = false;
+
+        function initPointerEvents() {
+            canvas.addEventListener('mousedown', handlePointerStart);
+            canvas.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerEnd);
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handlePointerStart(e.touches[0]);
+            }, {passive: false});
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                handlePointerMove(e.touches[0]);
+            }, {passive: false});
+            window.addEventListener('touchend', handlePointerEnd);
+        }
+
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.x) * scaleX,
+                y: (e.clientY - rect.y) * scaleY
+            };
+        }
+
+        function handlePointerStart(e) {
+            if (!state.splintActive) return;
+            const pos = getCanvasPos(e);
+            // Check if pointer is near the splint handle or tip
+            if (Math.abs(pos.x - state.splintX) < 50 && pos.y >= state.splintY - 80 && pos.y <= state.splintY + 20) {
+                state.isDraggingSplint = true;
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!state.isDraggingSplint) return;
+            const pos = getCanvasPos(e);
+            // 限制木條在畫布內；檢驗時由瓶口上方往下伸入
+            const previousY = state.splintY;
+            const nextX = Math.max(120, Math.min(220, pos.x));
+            let nextY = Math.max(80, Math.min(280, pos.y));
+            const inJarX = nextX >= 146 && nextX <= 194;
+            const targetInside = inJarX && nextY >= 120 && nextY < 235;
+            const alreadyInside = state.splintX >= 146 && state.splintX <= 194 && previousY >= 120 && previousY < 235;
+            // 只允許由瓶口下方（y>=235）進入；若從側面拖向玻璃壁，尖端停在瓶口下方。
+            if (targetInside && previousY >= 235 && nextY < 235) {
+                state.splintX = nextX;
+                state.splintY = 234;
+                return;
+            }
+            if (targetInside && !alreadyInside && previousY < 235) {
+                nextY = 235;
+            }
+            state.splintY = nextY;
+            state.splintX = nextX;
+        }
+
+        function handlePointerEnd() {
+            state.isDraggingSplint = false;
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawLabTable();
+            drawApparatus();
+            updateAndDrawBubbles();
+            drawSplint();
+            drawScientificOverlay();
+
+            requestAnimationFrame(render);
+        }
+
+        function drawLabTable() {
+            // Lab Bench
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(0, 310, canvas.width, 70);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(0, 305, canvas.width, 5);
+        }
+
+        function drawApparatus() {
+            // 1. Water Trough (水槽)
+            ctx.fillStyle = 'rgba(186, 230, 253, 0.45)';
+            ctx.fillRect(50, 210, 240, 95);
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(50, 210, 240, 95);
+
+            // Water Liquid
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.fillRect(52, 230, 236, 73);
+
+            // 2. Conical Flask (錐形瓶) at X: 420
+            const fx = 420, fy = 220; // 瓶底 fy+85=305，與桌面上緣接觸
+
+            // H2O2 Liquid inside flask
+            if (state.hasH2o2) {
+                ctx.fillStyle = 'rgba(224, 242, 254, 0.8)';
+                ctx.beginPath();
+                ctx.moveTo(fx - 32, fy + 80);
+                ctx.lineTo(fx + 32, fy + 80);
+                ctx.lineTo(fx + 20, fy + 40);
+                ctx.lineTo(fx - 20, fy + 40);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Draw Selected Catalyst in Flask
+            if (state.hasCat && state.selectedCatKey) {
+                drawCatalystInFlask(fx, fy + 78, CATALYSTS[state.selectedCatKey]);
+            }
+
+            // Flask Glass Outline
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(fx - 12, fy);
+            ctx.lineTo(fx - 12, fy + 35);
+            ctx.lineTo(fx - 38, fy + 85);
+            ctx.lineTo(fx + 38, fy + 85);
+            ctx.lineTo(fx + 12, fy + 35);
+            ctx.lineTo(fx + 12, fy);
+            ctx.moveTo(fx - 15, fy);
+            ctx.lineTo(fx + 15, fy);
+            ctx.stroke();
+
+            // Stopper & Glass Delivery Tube
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(fx - 13, fy - 6, 26, 10);
+
+            // 導氣管：由瓶塞引出，繞至水槽，再由倒置集氣瓶的開口向上伸入瓶內。
+            // 管路在水槽水面下通往倒置集氣瓶的下方開口，再向上伸入瓶內；管口朝上，氣體由管口逸出並排開瓶中水。
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(fx, fy - 6);
+            ctx.lineTo(fx, fy - 32);
+            ctx.bezierCurveTo(fx, fy - 65, 325, 175, 285, 210); // 越過水槽上緣進入槽內
+            ctx.lineTo(285, 280); // 在水槽內向下進入水中，不穿過側壁
+            ctx.lineTo(170, 280); // 水下水平接近集氣瓶下方開口
+            if (!state.jarRemoved && !state.jarLiftRequested) {
+                ctx.lineTo(170, 235); // 集氣時，導管接入瓶口並向上延伸
+            }
+            ctx.stroke();
+
+            // 3. 集氣瓶：取出時先以蓋片封住瓶口，再移出水槽並倒正。
+            // 動畫分兩段：先封口上移，移出水面後才倒正；檢驗前將蓋片微開。
+            if (state.jarLiftRequested && !state.jarRemoved) {
+                state.jarLiftOffset = Math.min(78, state.jarLiftOffset + 1.5);
+                if (state.jarLiftOffset >= 78) {
+                    state.jarRemoved = true;
+                    state.jarLiftRequested = false;
+                    const b = document.getElementById('btnSplint');
+                    b.disabled = false;
+                    b.innerHTML = '<span>🔥</span> 4. 微開瓶蓋並用帶火星木條檢驗';
+                    b.className = 'col-span-2 sm:col-span-1 p-2.5 bg-rose-100 text-rose-900 hover:bg-rose-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm';
+                    document.getElementById('instructionBanner').innerText = '集氣瓶已封口移出水槽並倒正。下一步微開瓶蓋，迅速將帶火星木條伸入瓶內檢驗。';
+                }
+            }
+            const jx = 170, jarW = 52, jarH = 115;
+            const jarTop = state.jarRemoved ? 88 : 120 - state.jarLiftOffset;
+            const jarBottom = jarTop + jarH;
+
+            // 排水集氣動畫：氣體由倒置瓶頂累積，將水向下排出。
+            // 這是定性示意，不代表實測體積或氧氣純度。
+            const innerX = jx - jarW / 2 + 3;
+            const innerW = jarW - 6;
+            const innerTop = jarTop + 3;
+            const innerBottom = jarBottom - 3;
+            const innerH = innerBottom - innerTop;
+            if (!state.jarRemoved) {
+                const gasFraction = Math.max(0, Math.min(1, state.o2Level / 100));
+                const gasH = innerH * gasFraction;
+                const waterY = innerTop + gasH;
+
+                if (gasH > 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+                    ctx.fillRect(innerX, innerTop, innerW, gasH);
+                    if (gasH > 22) {
+                        ctx.fillStyle = '#0369a1';
+                        ctx.font = 'bold 9px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('氣體', jx, innerTop + 13);
+                    }
+                }
+                if (waterY < innerBottom) {
+                    ctx.fillStyle = 'rgba(56,189,248,0.62)';
+                    ctx.fillRect(innerX, waterY, innerW, innerBottom - waterY);
+                    ctx.strokeStyle = '#0284c7';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(innerX, waterY);
+                    ctx.lineTo(innerX + innerW, waterY);
+                    ctx.stroke();
+                }
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.82)';
+                ctx.fillRect(innerX, innerTop, innerW, innerH);
+                ctx.fillStyle = '#0369a1';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('收集氣體', jx, innerTop + 15);
+            }
+
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            if (!state.jarRemoved) {
+                // 倒置集氣階段：封閉底在上，瓶口朝下。
+                ctx.moveTo(jx - jarW/2, jarBottom);
+                ctx.lineTo(jx - jarW/2, jarTop);
+                ctx.lineTo(jx + jarW/2, jarTop);
+                ctx.lineTo(jx + jarW/2, jarBottom);
+            } else {
+                // 移出並倒正後：瓶口在上，底部封閉。
+                ctx.moveTo(jx - jarW/2, jarTop);
+                ctx.lineTo(jx - jarW/2, jarBottom);
+                ctx.lineTo(jx + jarW/2, jarBottom);
+                ctx.lineTo(jx + jarW/2, jarTop);
+            }
+            ctx.stroke();
+
+            // 瓶蓋只在集氣瓶移出水槽並倒正後才顯示；收集氣體時不畫瓶蓋。
+            if (state.jarRemoved && !state.jarLidOpen) {
+                // 移出水槽後先封口。
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(jx - 30, jarTop - 3, 60, 5);
+            } else if (state.jarRemoved && state.jarLidOpen) {
+                // 使用者按下「微開瓶蓋」後，才畫出微開的瓶蓋。
+                ctx.fillStyle = '#64748b';
+                ctx.save();
+                ctx.translate(jx + 25, jarTop - 9);
+                ctx.rotate(-0.18);
+                ctx.fillRect(-28, -2, 56, 5);
+                ctx.restore();
+                ctx.fillStyle = '#0f766e';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('瓶蓋微開', jx + 43, jarTop + 12);
+            }
+
+            // 導管末端只在集氣階段伸入倒置瓶內；取瓶前先封口，之後與導管分離。
+            if (!state.jarRemoved && !state.jarLiftRequested) {
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(jx, jarBottom);
+                ctx.lineTo(jx, 165);
+                ctx.stroke();
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.ellipse(jx, 165, 3.5, 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw catalyst visual appearance in the bottom of conical flask
+        function drawCatalystInFlask(x, y, catObj) {
+            ctx.save();
+            if (catObj.drawShape === 'powder') {
+                // Manganese Dioxide (Black powder)
+                ctx.fillStyle = catObj.color;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 22, 7, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (catObj.drawShape === 'enoki') {
+                // Enoki Mushrooms (White small stalks)
+                ctx.strokeStyle = '#fef3c7';
+                ctx.lineWidth = 3;
+                for (let i = -15; i <= 15; i += 6) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + i, y);
+                    ctx.lineTo(x + i + (i % 2), y - 14);
+                    ctx.stroke();
+                    // Small cap
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(x + i + (i % 2), y - 14, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (catObj.drawShape === 'chunks') {
+                // Pig liver chunks (Dark red)
+                ctx.fillStyle = catObj.color;
+                ctx.beginPath();
+                ctx.roundRect(x - 18, y - 8, 14, 8, 3);
+                ctx.roundRect(x, y - 10, 16, 9, 3);
+                ctx.fill();
+            } else if (catObj.drawShape === 'cubes') {
+                // Carrot / Potato cubes
+                ctx.fillStyle = catObj.color;
+                ctx.beginPath();
+                ctx.fillRect(x - 16, y - 8, 8, 8);
+                ctx.fillRect(x - 4, y - 10, 8, 8);
+                ctx.fillRect(x + 8, y - 7, 8, 8);
+            }
+            ctx.restore();
+        }
+
+        function updateAndDrawBubbles() {
+            if (state.hasCat && state.hasH2o2 && state.selectedCatKey) {
+                const catInfo = CATALYSTS[state.selectedCatKey];
+                const totalRate = catInfo.bubbleRate * state.speedMultiplier; // 定性動畫參數，未經實驗校準
+
+                // Spawn bubbles in Flask
+                if (Math.random() < totalRate * 0.4) {
+                    bubbles.push({
+                        x: 420 + (Math.random() * 24 - 12),
+                        y: 260,
+                        vy: -1.2 - Math.random() * 1.5,
+                        size: 2.5 + Math.random() * 3
+                    });
+                }
+
+                // If排水集氣 is active, increase oxygen collection rate
+                if (state.collecting && state.o2Level < 100) {
+                    state.o2Level += catInfo.maxO2Rate * state.speedMultiplier * 0.15; // 僅表示集氣進度，不是氧氣濃度或實測體積
+                    if (state.o2Level >= 100) {
+                        state.o2Level = 100;
+                        state.collecting = false;
+                        document.getElementById('instructionBanner').innerText = '🎉 模擬集氣進度已滿！此進度不代表氧氣純度；可進行定性檢驗示意。';
+                        document.getElementById('badgeStatus').innerText = '收集完畢';
+                        document.getElementById('badgeStatus').className = 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full';
+                        document.getElementById('btnSplint').disabled = false;
+                        document.getElementById('btnSplint').classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
+                        document.getElementById('btnSplint').classList.add('bg-rose-100', 'text-rose-900', 'hover:bg-rose-200');
+                    }
+                    updateUIStats();
+                }
+            }
+
+            // Render bubbles inside Flask
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                let b = bubbles[i];
+                b.y += b.vy;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                if (b.y < 220) bubbles.splice(i, 1);
+            }
+        }
+
+        function drawSplint() {
+            if (!state.splintActive) return;
+
+            const sx = state.splintX;
+            const sy = state.splintY;
+
+            // 集氣瓶已倒正、瓶口朝上；木條從上方伸入，火星尖端在木柄下端。
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy - 70);
+            ctx.lineTo(sx, sy);
+            ctx.stroke();
+            ctx.fillStyle = '#b45309';
+            ctx.beginPath();
+            ctx.arc(sx, sy - 70, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 只有從已微開的瓶口進入、且位於瓶內的尖端才觸發檢驗示意。
+            const jarTop = 88;
+            const jarBottom = jarTop + 115;
+            const isInsideJar = state.jarRemoved && state.jarLidOpen && (sx >= 146 && sx <= 194 && sy > jarTop && sy <= jarBottom);
+            
+            // Re-ignition Fire Intensity based on Jar Oxygen Level
+            if (isInsideJar && state.o2Level > 50 && !state.collecting) {
+                // 🔥 Re-ignite dramatically! (劇烈復燃)
+                const fireSize = 10 + (state.o2Level / 100) * 16 + Math.sin(Date.now() / 60) * 3;
+
+                // Outer Flame
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.arc(sx, sy + 4, fireSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner Flame
+                ctx.fillStyle = '#fde047';
+                ctx.beginPath();
+                ctx.arc(sx, sy + 4, fireSize * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Light Glow Effect
+                ctx.fillStyle = 'rgba(251, 146, 60, 0.3)';
+                ctx.beginPath();
+                ctx.arc(sx, sy + 4, fireSize * 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // On-screen Label
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'black 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🔥 模擬：火星變旺', sx, sy + fireSize + 16);
+
+                document.getElementById('dataSplintStatus').innerText = '模擬：火星變旺（定性示意）';
+                document.getElementById('dataSplintStatus').className = 'font-bold text-rose-600';
+            } else {
+                // Normal weak ember glow when outside or in low oxygen (微弱火星)
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(sx, sy, 3 + Math.sin(Date.now() / 150), 0, Math.PI * 2);
+                ctx.fill();
+
+                document.getElementById('dataSplintStatus').innerText = isInsideJar ? (state.collecting || state.o2Level <= 50 ? '集氣尚未達模擬檢驗條件' : '模擬觀察') : '木條在集氣瓶外';
+                document.getElementById('dataSplintStatus').className = 'font-bold text-slate-600';
+            }
+        }
+
+        function drawScientificOverlay() {
+            // Scientific Diagram Labels & Arrows
+            if (state.hasCat && state.hasH2o2) {
+                ctx.fillStyle = '#0284c7';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('2H₂O₂ → 2H₂O + O₂', 380, 160);
+            }
+        }
+
+        function selectCatalyst(key) {
+            state.selectedCatKey = key;
+            state.hasCat = true;
+
+            // Highlight UI buttons
+            document.querySelectorAll('.catalyst-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-cyan-500', 'bg-cyan-100');
+            });
+            const selectedBtn = document.getElementById(`cat_${key}`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('ring-2', 'ring-cyan-500', 'bg-cyan-100');
+            }
+
+            const catInfo = CATALYSTS[key];
+            document.getElementById('catalystTag').innerText = `已選：${catInfo.name}`;
+            document.getElementById('instructionBanner').innerText = `已選擇「${catInfo.name}」(${catInfo.type})！接著請點擊「1. 滴入雙氧水」。`;
+
+            // Enable H2O2 Button
+            document.getElementById('btnH2o2').disabled = false;
+            document.getElementById('btnH2o2').classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
+            document.getElementById('btnH2o2').classList.add('bg-cyan-100', 'text-cyan-900', 'hover:bg-cyan-200');
+
+            updateUIStats();
+        }
+
+        function addH2o2() {
+            if (!state.hasCat) return;
+            state.hasH2o2 = true;
+
+            document.getElementById('btnH2o2').disabled = true;
+            document.getElementById('btnH2o2').className = 'p-2.5 bg-slate-200 text-slate-500 rounded-xl text-xs font-bold cursor-default';
+            document.getElementById('btnH2o2').innerText = '✔ 已滴入雙氧水';
+
+            // Enable Collection Button
+            document.getElementById('btnCollect').disabled = false;
+            document.getElementById('btnCollect').classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
+            document.getElementById('btnCollect').classList.add('bg-sky-100', 'text-sky-900', 'hover:bg-sky-200');
+
+            const catInfo = CATALYSTS[state.selectedCatKey];
+            document.getElementById('instructionBanner').innerText = `雙氧水與${catInfo.name}開始反應！請點擊「2. 開始排水集氣」。`;
+            document.getElementById('badgeStatus').innerText = '反應中';
+            document.getElementById('badgeStatus').className = 'bg-cyan-100 text-cyan-800 text-[10px] font-bold px-2 py-0.5 rounded-full';
+
+            updateUIStats();
+        }
+
+        function startCollection() {
+            if (!state.hasH2o2) return;
+            state.collecting = true;
+
+            document.getElementById('btnCollect').disabled = true;
+            document.getElementById('btnCollect').className = 'p-2.5 bg-slate-200 text-slate-500 rounded-xl text-xs font-bold cursor-default';
+            document.getElementById('btnCollect').innerText = '⏳ 正在收集氣體...';
+            document.getElementById('instructionBanner').innerText = '正在以排水集氣示意：生成的氣體進入倒置集氣瓶並排開水。進度為動畫值，非實測體積。';
+        }
+
+        function enableSplint() {
+            const btn = document.getElementById('btnSplint');
+            if (!state.jarRemoved) {
+                state.jarLiftRequested = true;
+                btn.disabled = true;
+                btn.innerHTML = '<span>↟</span> 正在將集氣瓶移出水槽…';
+                btn.className = 'col-span-2 sm:col-span-1 p-2.5 bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm';
+                document.getElementById('instructionBanner').innerText = '第三步：先封住集氣瓶開口，再移出水槽並倒正。完成後微開瓶蓋進行檢驗。';
+                return;
+            }
+            state.jarLidOpen = true;
+            state.splintActive = true;
+            btn.disabled = true;
+            btn.innerHTML = '<span>🔥</span> 正在檢驗';
+            document.getElementById('instructionBanner').innerText = '已微開瓶蓋。請將帶火星木條從上方瓶口向下伸入瓶內；不可穿過瓶壁。動畫結果僅為定性示意。';
+        }
+
+        function updateSpeed(val) {
+            state.speedMultiplier = val / 6; // 只調整動畫速度，不代表真實濃度—反應速率關係
+            document.getElementById('speedLabel').innerText = (val / 6).toFixed(1) + '×';
+        }
+
+        function updateUIStats() {
+            if (!state.selectedCatKey) return;
+            const cat = CATALYSTS[state.selectedCatKey];
+            document.getElementById('dataCatalyst').innerText = cat.name;
+            document.getElementById('dataCatType').innerText = cat.type;
+            
+            if (state.hasH2o2) {
+                document.getElementById('dataBubbleRate').innerText = cat.bubbleRate > 2.5 ? "動畫較快（非實測）" : (cat.bubbleRate > 1.0 ? "動畫中等（非實測）" : "動畫較慢（非實測）");
+            }
+
+            document.getElementById('o2Bar').style.width = `${state.o2Level}%`;
+            document.getElementById('o2Text').innerText = `${Math.floor(state.o2Level)}%`;
+        }
+
+        function verifyAnswer() {
+            const radios = document.getElementsByName('ans');
+            let selected = null;
+            for (let r of radios) {
+                if (r.checked) selected = r.value;
+            }
+            const msg = document.getElementById('feedbackMsg');
+            if (!selected) {
+                msg.style.color = '#d97706';
+                msg.innerText = '請先選擇一個選項再提交驗證！';
+                return;
+            }
+            if (selected === 'B') {
+                msg.style.color = '#059669';
+                msg.innerText = '🎉 正確！許多動植物組織含有過氧化氫酶，可加速過氧化氫分解產生氧氣。';
+            } else {
+                msg.style.color = '#dc2626';
+                msg.innerText = '❌ 答錯囉！提示：部分動植物組織含有能分解過氧化氫的酵素。';
+            }
+        }
+
+        function recordAndShowData() {
+            if (!state.selectedCatKey || !state.hasH2o2) {
+                alert('請先選擇材料並加入過氧化氫，完成一次模擬操作後再記錄。');
+                return;
+            }
+
+            const cat = CATALYSTS[state.selectedCatKey];
+            // Add log if not logged
+            const exists = state.recordedLogs.some(l => l.key === state.selectedCatKey);
+            if (!exists) {
+                state.recordedLogs.push({
+                    key: state.selectedCatKey,
+                    name: cat.name,
+                    type: cat.type,
+                    rate: cat.bubbleRate > 2.5 ? "動畫較快（非實測）" : (cat.bubbleRate > 1.0 ? "動畫中等（非實測）" : "動畫較慢（非實測）"),
+                    result: !state.hasH2o2 ? "尚未反應" : (state.o2Level > 50 ? "模擬：火星變旺" : "集氣量不足以進行模擬檢驗")
+                });
+            }
+
+            // Populate table
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+            state.recordedLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">${log.name}</td>
+                    <td class="p-2">${log.type}</td>
+                    <td class="p-2">${log.rate}</td>
+                    <td class="p-2 font-bold text-emerald-700">${log.result}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            toggleDataModal();
+        }
+
+        function toggleGuide() {
+            const modal = document.getElementById('guideModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+
+        function toggleDataModal() {
+            const modal = document.getElementById('dataModal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+
+        function resetExperiment() {
+            state.selectedCatKey = null;
+            state.hasCat = false;
+            state.hasH2o2 = false;
+            state.collecting = false;
+            state.o2Level = 0;
+            state.speedMultiplier = 1.0;
+            document.getElementById("speedSlider").value = 6;
+            document.getElementById("speedLabel").innerText = "1.0×";
+            state.splintActive = false;
+            state.jarLiftOffset = 0;
+            state.jarLiftRequested = false;
+            state.jarRemoved = false;
+            state.jarLidOpen = false;
+            state.splintY = 105;
+            state.splintX = 170;
+            bubbles = [];
+
+            // Reset UI
+            document.querySelectorAll('.catalyst-btn').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-cyan-500', 'bg-cyan-100');
+            });
+            document.getElementById('catalystTag').innerText = '目前：尚未選擇';
+
+            const bH2o2 = document.getElementById('btnH2o2');
+            bH2o2.disabled = true;
+            bH2o2.className = 'p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition cursor-not-allowed';
+            bH2o2.innerHTML = '<span>💧</span> 1. 滴入雙氧水';
+
+            const bCol = document.getElementById('btnCollect');
+            bCol.disabled = true;
+            bCol.className = 'p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition cursor-not-allowed';
+            bCol.innerHTML = '<span>🧪</span> 2. 開始排水集氣';
+
+            const bSpl = document.getElementById('btnSplint');
+            bSpl.disabled = true;
+            bSpl.className = 'col-span-2 sm:col-span-1 p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 transition cursor-not-allowed';
+            bSpl.innerHTML = '<span>🧪</span> 3. 將集氣瓶移出水槽';
+
+            document.getElementById('dataCatalyst').innerText = '無';
+            document.getElementById('dataCatType').innerText = '-';
+            document.getElementById('dataBubbleRate').innerText = '靜止';
+            document.getElementById('dataSplintStatus').innerText = '尚未檢驗';
+            document.getElementById('o2Bar').style.width = '0%';
+            document.getElementById('o2Text').innerText = '0%';
+
+            document.getElementById('badgeStatus').innerText = '準備中';
+            document.getElementById('badgeStatus').className = 'bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full';
+            document.getElementById('instructionBanner').innerText = '步驟 1：請下方選擇並加入「催化劑」（例如：二氧化錳、金針菇或豬肝）！';
+            document.getElementById('feedbackMsg').innerText = '';
+
+            const radios = document.getElementsByName('ans');
+            for (let r of radios) r.checked = false;
+        }
+
+        // Initialize application on page load
+        window.onload = function() {
+            initPointerEvents();
+            render();
+        };
+    </script>
+</body>
+</html>
